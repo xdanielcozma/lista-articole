@@ -764,32 +764,36 @@
     <!-- ===== SCREEN 1B: MENIU LISTE ===== -->
     <div class="screen" id="screen-sessions">
         <div class="app-header">
-            <div class="app-logo">�</div>
+            <div class="app-logo">&#128203;</div>
             <div class="app-title">Listele tale</div>
             <div class="app-subtitle" id="sessions-subtitle">–</div>
         </div>
 
         <div id="sessions-list"
-            style="display:flex; flex-direction:column; gap:10px; flex:1; overflow-y:auto; min-height:0; margin-bottom:12px;">
+            style="display:flex; flex-direction:column; gap:10px; flex:1; overflow-y:auto; min-height:0; margin-bottom:14px;">
         </div>
 
-        <div class="card" style="margin-bottom:0;">
-            <div class="field-label" style="margin-bottom:8px;">➕ Listă nouă</div>
-            <div style="display:flex; gap:8px;">
-                <input class="field-input" id="new-session-name" type="text" placeholder="Nume (ex: Casa 1, Punct Cluj)"
-                    style="flex:1; padding:11px 14px;" />
-                <button class="btn btn-primary" onclick="createNewSession()"
-                    style="min-width:52px; padding:11px; font-size:20px;">+</button>
-            </div>
+        <!-- Creare lista noua -->
+        <div
+            style="display:flex; gap:8px; align-items:center; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:14px;">
+            <input class="field-input" id="new-session-name" type="text"
+                placeholder="Nume listă nouă (ex: Casa 1, Cluj)..."
+                style="flex:1; padding:11px 14px; margin:0; border-radius:10px;"
+                onkeydown="if(event.key==='Enter') createNewSession()" />
+            <button class="btn btn-primary" onclick="createNewSession()"
+                style="min-width:52px; height:46px; font-size:22px; padding:0; border-radius:10px; flex-shrink:0;">+</button>
         </div>
     </div>
 
     <!-- ===== SCREEN 2: MAIN (add items) ===== -->
     <div class="screen" id="screen-main">
-        <div class="app-header">
-            <div class="app-logo">🎙️</div>
+        <div class="app-header" style="position:relative;">
+            <div class="app-logo">&#127897;</div>
             <div class="app-title">Adaugă articole</div>
             <div class="app-subtitle" id="firma-display">–</div>
+            <button onclick="backToSessions()"
+                style="position:absolute; top:0; right:0; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:7px 11px; font-size:18px; cursor:pointer; color:var(--muted); line-height:1;"
+                title="Meniu liste">☰</button>
         </div>
 
         <div class="step-indicator">
@@ -1142,22 +1146,41 @@
             }
             recognition = new SpeechRecognition();
             recognition.lang = 'ro-RO';
-            recognition.interimResults = false;
+            recognition.interimResults = true;
             recognition.maxAlternatives = 1;
 
             recognition.onspeechend = () => {
-                document.getElementById('processing-overlay').classList.add('show');
+                document.getElementById('mic-status').textContent = '⏳ Procesez...';
             };
 
             recognition.onresult = (e) => {
-                const raw = e.results[0][0].transcript;
-                pendingArticle = normalizeText(raw);
-                stopListening();
-                showConfirm(pendingArticle);
+                // Afiseaza textul live cat timp vorbeste
+                let interim = '';
+                let final = '';
+                for (let i = e.resultIndex; i < e.results.length; i++) {
+                    if (e.results[i].isFinal) {
+                        final += e.results[i][0].transcript;
+                    } else {
+                        interim += e.results[i][0].transcript;
+                    }
+                }
+
+                if (interim) {
+                    // Arata textul recunoscut pana acum (live)
+                    document.getElementById('mic-status').textContent = '🎙 ' + interim;
+                }
+
+                if (final) {
+                    // Rezultat final — arata confirmarea instant
+                    pendingArticle = normalizeText(final);
+                    stopListening();
+                    showConfirm(pendingArticle);
+                }
             };
 
             recognition.onerror = (e) => {
                 stopListening();
+                hideOverlay();
                 if (e.error !== 'no-speech' && e.error !== 'aborted') {
                     document.getElementById('mic-status').textContent = '⚠️ Eroare la microfon.';
                 }
@@ -1178,6 +1201,7 @@
             document.getElementById('mic-btn').classList.add('listening');
             document.getElementById('mic-btn').textContent = '⏹';
             document.getElementById('mic-status').textContent = '🔴 Ascult... rostește articolul!';
+            document.getElementById('mic-status').style.color = '';
         }
 
         function stopListening() {
@@ -1186,7 +1210,6 @@
             const btn = document.getElementById('mic-btn');
             btn.classList.remove('listening');
             btn.textContent = '🎙️';
-            document.getElementById('mic-status').textContent = '';
         }
 
         function hideOverlay() {
@@ -1202,7 +1225,7 @@
             showConfirm(pendingArticle);
         }
 
-        // ===== SCREEN 3: CONFIRM =====
+        // ===== SCREEN 3: CONFIRM (folosit doar pentru modificare manuala) =====
         function showConfirm(word) {
             hideOverlay();
             document.getElementById('confirm-word').textContent = word;
@@ -1213,7 +1236,7 @@
             if (pendingArticle) {
                 articles.push(pendingArticle);
                 renderList();
-                saveSession(); // salveaza progresul
+                saveSession();
             }
             pendingArticle = '';
             showScreen('screen-main');
