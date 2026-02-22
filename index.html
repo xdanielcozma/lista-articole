@@ -572,6 +572,70 @@
             background: var(--accent);
         }
 
+        /* ===== SESSION CARDS ===== */
+        .session-card {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: border-color .18s, background .18s;
+        }
+
+        .session-card:active {
+            border-color: var(--accent);
+            background: var(--surface2);
+        }
+
+        .session-card-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 3px;
+        }
+
+        .session-card-meta {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .badge-sent {
+            background: rgba(34, 197, 94, .15);
+            color: var(--green);
+            border: 1px solid rgba(34, 197, 94, .3);
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge-draft {
+            background: rgba(249, 115, 22, .15);
+            color: var(--accent);
+            border: 1px solid rgba(249, 115, 22, .3);
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .session-del {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: color .18s;
+            flex-shrink: 0;
+        }
+
+        .session-del:hover {
+            color: var(--red);
+        }
+
         /* ===== PROCESSING OVERLAY ===== */
         #processing-overlay {
             display: none;
@@ -697,30 +761,26 @@
         </button>
     </div>
 
-    <!-- ===== SCREEN 1B: SESIUNE SALVATA ===== -->
-    <div class="screen" id="screen-resume">
+    <!-- ===== SCREEN 1B: MENIU LISTE ===== -->
+    <div class="screen" id="screen-sessions">
         <div class="app-header">
-            <div class="app-logo">📋</div>
-            <div class="app-title">Listă salvată</div>
-            <div class="app-subtitle" id="resume-subtitle">–</div>
+            <div class="app-logo">�</div>
+            <div class="app-title">Listele tale</div>
+            <div class="app-subtitle" id="sessions-subtitle">–</div>
         </div>
 
-        <div class="card" style="flex:1; max-height:45vh; overflow-y:auto;">
-            <div class="list-header">
-                <div class="list-title">📋 Articole salvate</div>
-                <div class="badge" id="resume-badge">0 articole</div>
+        <div id="sessions-list"
+            style="display:flex; flex-direction:column; gap:10px; flex:1; overflow-y:auto; min-height:0; margin-bottom:12px;">
+        </div>
+
+        <div class="card" style="margin-bottom:0;">
+            <div class="field-label" style="margin-bottom:8px;">➕ Listă nouă</div>
+            <div style="display:flex; gap:8px;">
+                <input class="field-input" id="new-session-name" type="text" placeholder="Nume (ex: Casa 1, Punct Cluj)"
+                    style="flex:1; padding:11px 14px;" />
+                <button class="btn btn-primary" onclick="createNewSession()"
+                    style="min-width:52px; padding:11px; font-size:20px;">+</button>
             </div>
-            <ul class="article-list" id="resume-list" style="max-height:none;"></ul>
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
-            <button class="btn btn-success" onclick="resumeSession()">
-                ✅ Continuă această listă
-            </button>
-            <button class="btn btn-outline" onclick="discardSession()"
-                style="border-color:var(--red); color:var(--red);">
-                🗑️ Şterge și începe listă nouă
-            </button>
         </div>
     </div>
 
@@ -855,7 +915,8 @@
             <div class="preview-list" id="success-preview"></div>
         </div>
 
-        <button class="btn btn-outline mt16" onclick="resetApp()">🔄 Listă nouă</button>
+        <button class="btn btn-primary mt16" onclick="backToSessions()">📂 Înapoi la listele mele</button>
+        <button class="btn btn-outline" style="margin-top:10px;" onclick="resetApp()">🔄 Client nou</button>
     </div>
 
 
@@ -873,6 +934,7 @@
         let pendingArticle = '';
         let recognition = null;
         let isListening = false;
+        let currentSessionId = null;
 
         // ===== UTILS =====
         function removeDiacritics(str) {
@@ -933,18 +995,29 @@
         }
         detectInAppBrowser();
 
-        // ===== LOCALSTORAGE =====
+        // ===== LOCALSTORAGE MULTI-SESIUNE =====
         function lsKey(cui) { return 'lista_cmc_' + cui.replace(/\s/g, ''); }
 
-        function saveSession() {
-            const firma = document.getElementById('input-firma').value.trim();
-            const cui = document.getElementById('input-cui').value.trim();
-            if (!cui || articles.length === 0) return;
-            localStorage.setItem(lsKey(cui), JSON.stringify({ firma, cui, articles }));
+        function getStorage(cui) {
+            const raw = localStorage.getItem(lsKey(cui));
+            if (!raw) return null;
+            try {
+                const data = JSON.parse(raw);
+                // Migrare format vechi (o singura lista) -> nou (array)
+                if (data.articles && !data.sessions) {
+                    return {
+                        firma: data.firma, cui: data.cui, sessions: [{
+                            id: '0', name: 'Lista 1', articles: data.articles,
+                            sent: data.sent || false, savedAt: new Date().toISOString()
+                        }]
+                    };
+                }
+                return data;
+            } catch (e) { localStorage.removeItem(lsKey(cui)); return null; }
         }
 
-        function clearSession(cui) {
-            localStorage.removeItem(lsKey(cui));
+        function putStorage(cui, data) {
+            localStorage.setItem(lsKey(cui), JSON.stringify(data));
         }
 
         function startApp() {
@@ -952,49 +1025,105 @@
             const cui = document.getElementById('input-cui').value.trim();
             if (!firma) { alert('Te rugăm să introduci numele firmei.'); return; }
             if (!cui) { alert('Te rugăm să introduci CUI-ul firmei.'); return; }
-
             document.getElementById('firma-display').textContent = firma + ' | ' + cui;
 
-            // Verifica sesiune anterioara
-            const saved = localStorage.getItem(lsKey(cui));
-            if (saved) {
-                try {
-                    const data = JSON.parse(saved);
-                    if (data.articles && data.articles.length > 0) {
-                        // Arata ecranul sesiunii salvate
-                        const n = data.articles.length;
-                        document.getElementById('resume-subtitle').textContent =
-                            (data.firma || firma) + ' — ' + n + (n === 1 ? ' articol salvat' : ' articole salvate');
-                        document.getElementById('resume-badge').textContent = n + (n === 1 ? ' articol' : ' articole');
-                        document.getElementById('resume-list').innerHTML =
-                            data.articles.map((a, i) => `<li class="article-item"><span class="article-num">${i + 1}.</span><span class="article-name">${a}</span></li>`).join('');
-                        // Stocheaza temporar pentru butoane
-                        window._resumeData = data;
-                        showScreen('screen-resume');
-                        return;
-                    }
-                } catch (e) { localStorage.removeItem(lsKey(cui)); }
+            const stored = getStorage(cui);
+            if (stored && stored.sessions && stored.sessions.length > 0) {
+                showSessionsMenu(firma, cui, stored.sessions);
+                return;
             }
+            // Prima utilizare: porneste direct
+            startNewSession(firma, cui, 'Lista 1');
+        }
 
+        function showSessionsMenu(firma, cui, sessions) {
+            document.getElementById('sessions-subtitle').textContent = firma + ' — ' + cui;
+            document.getElementById('sessions-list').innerHTML = sessions.map((s, idx) => `
+                <div class="card session-card" onclick="selectSession('${s.id}')">
+                    <div style="flex:1; min-width:0;">
+                        <div class="session-card-name">${s.name || 'Lista ' + (idx + 1)}</div>
+                        <div class="session-card-meta">${s.articles.length} articole</div>
+                    </div>
+                    <span class="${s.sent ? 'badge-sent' : 'badge-draft'}">${s.sent ? '✅ Trimisă' : '📝 În curs'}</span>
+                    <button class="session-del" onclick="event.stopPropagation(); deleteSession('${s.id}')" title="Şterge">✕</button>
+                </div>
+            `).join('');
+            showScreen('screen-sessions');
+        }
+
+        function selectSession(id) {
+            const cui = document.getElementById('input-cui').value.trim();
+            const stored = getStorage(cui);
+            const session = stored && stored.sessions.find(s => s.id === id);
+            if (!session) return;
+            currentSessionId = id;
+            articles = session.articles.slice();
+            renderList();
             goToMain();
         }
 
-        function resumeSession() {
-            if (window._resumeData) {
-                articles = window._resumeData.articles;
-                renderList();
-                window._resumeData = null;
-            }
-            goToMain();
+        function createNewSession() {
+            const firma = document.getElementById('input-firma').value.trim();
+            const cui = document.getElementById('input-cui').value.trim();
+            const inp = document.getElementById('new-session-name').value.trim();
+            const stored = getStorage(cui) || { firma, cui, sessions: [] };
+            const name = inp || ('Lista ' + (stored.sessions.length + 1));
+            startNewSession(firma, cui, name);
         }
 
-        function discardSession() {
-            // Nu stergem lista din memorie! Poate are mai multe case de marcat.
-            // Lista veche va fi suprascrisă automat când se adaugă articole noi.
+        function startNewSession(firma, cui, name) {
+            currentSessionId = Date.now().toString();
+            let stored = getStorage(cui) || { firma, cui, sessions: [] };
+            stored.firma = firma;
+            stored.sessions.push({ id: currentSessionId, name, articles: [], sent: false, savedAt: new Date().toISOString() });
+            putStorage(cui, stored);
             articles = [];
             renderList();
-            window._resumeData = null;
+            const inp = document.getElementById('new-session-name');
+            if (inp) inp.value = '';
             goToMain();
+        }
+
+        function deleteSession(id) {
+            const firma = document.getElementById('input-firma').value.trim();
+            const cui = document.getElementById('input-cui').value.trim();
+            const stored = getStorage(cui);
+            if (!stored) return;
+            stored.sessions = stored.sessions.filter(s => s.id !== id);
+            if (stored.sessions.length === 0) {
+                localStorage.removeItem(lsKey(cui));
+                startNewSession(firma, cui, 'Lista 1');
+                return;
+            }
+            putStorage(cui, stored);
+            showSessionsMenu(firma, cui, stored.sessions);
+        }
+
+        function saveSession() {
+            const firma = document.getElementById('input-firma').value.trim();
+            const cui = document.getElementById('input-cui').value.trim();
+            if (!cui || !currentSessionId || articles.length === 0) return;
+            const stored = getStorage(cui) || { firma, cui, sessions: [] };
+            const idx = stored.sessions.findIndex(s => s.id === currentSessionId);
+            if (idx >= 0) {
+                stored.sessions[idx].articles = articles.slice();
+                stored.sessions[idx].savedAt = new Date().toISOString();
+            }
+            putStorage(cui, stored);
+        }
+
+        function backToSessions() {
+            const firma = document.getElementById('input-firma').value.trim();
+            const cui = document.getElementById('input-cui').value.trim();
+            const stored = getStorage(cui);
+            currentSessionId = null;
+            articles = [];
+            renderList();
+            if (stored && stored.sessions && stored.sessions.length > 0) {
+                showSessionsMenu(firma, cui, stored.sessions);
+            } else {
+                showScreen('screen-start');
+            }
         }
 
         function goToMain() {
@@ -1157,7 +1286,16 @@
 
         function showSuccess(firma, arts) {
             const cui = document.getElementById('input-cui').value.trim();
-            clearSession(cui); // sterge sesiunea dupa trimitere
+            // Marcam sesiunea curenta ca trimisa
+            const stored = getStorage(cui);
+            if (stored && currentSessionId) {
+                const idx = stored.sessions.findIndex(s => s.id === currentSessionId);
+                if (idx >= 0) {
+                    stored.sessions[idx].sent = true;
+                    stored.sessions[idx].articles = arts.slice();
+                    putStorage(cui, stored);
+                }
+            }
             document.getElementById('success-msg').innerHTML =
                 `<strong>${firma}</strong> — tehnicianul a primit lista!<br/>Mulțumim și pe curând! 😊`;
             document.getElementById('success-preview').innerHTML =
@@ -1167,8 +1305,7 @@
 
         // ===== RESET =====
         function resetApp() {
-            const cui = document.getElementById('input-cui').value.trim();
-            clearSession(cui);
+            currentSessionId = null;
             articles = [];
             pendingArticle = '';
             renderList();
