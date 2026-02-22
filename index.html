@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>📋 Listă Articole – Casă de Marcat</title>
+    <title>📋 Listă articole – casă de marcat</title>
 
     <!-- Open Graph pentru WhatsApp preview -->
-    <meta property="og:title" content="📋 Completare Listă Articole" />
+    <meta property="og:title" content="📋 Completare listă articole" />
     <meta property="og:description" content="Adaugă articolele tale prin voce – simplu și rapid!" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://i.imgur.com/3QfZk5L.png" />
@@ -571,16 +571,105 @@
         .step-dot.active {
             background: var(--accent);
         }
+
+        /* ===== PROCESSING OVERLAY ===== */
+        #processing-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 22, 35, 0.96);
+            z-index: 999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        #processing-overlay.show {
+            display: flex;
+        }
+
+        .proc-icon {
+            font-size: 56px;
+            animation: procPulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes procPulse {
+
+            0%,
+            100% {
+                transform: scale(0.9);
+                opacity: 0.7;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        .proc-dots {
+            display: flex;
+            gap: 10px;
+        }
+
+        .proc-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: dotBounce 0.8s ease-in-out infinite;
+        }
+
+        .proc-dot:nth-child(2) {
+            animation-delay: 0.18s;
+        }
+
+        .proc-dot:nth-child(3) {
+            animation-delay: 0.36s;
+        }
+
+        @keyframes dotBounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+
+            50% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .proc-label {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0.02em;
+        }
     </style>
 </head>
 
 <body>
 
+    <!-- ===== PROCESSING OVERLAY ===== -->
+    <div id="processing-overlay">
+        <div class="proc-icon">🎙️</div>
+        <div class="proc-dots">
+            <div class="proc-dot"></div>
+            <div class="proc-dot"></div>
+            <div class="proc-dot"></div>
+        </div>
+        <div class="proc-label">Se procesează...</div>
+    </div>
+
     <!-- ===== SCREEN 1: START ===== -->
     <div class="screen active" id="screen-start">
         <div class="app-header">
             <div class="app-logo">🧾</div>
-            <div class="app-title">Listă Articole</div>
+            <div class="app-title">Listă articole</div>
             <div class="app-subtitle">Completează lista pentru casa de marcat prin voce</div>
         </div>
 
@@ -590,18 +679,32 @@
         </div>
 
         <div class="card">
-            <div class="field-label">Numele Firmei *</div>
+            <div class="field-label">Numele firmei *</div>
             <input class="field-input" id="input-firma" type="text" placeholder="ex: SC CAFENEA SRL"
-                autocomplete="organization" />
-            <div class="field-label" style="margin-top:12px;">CUI / Cod Unic de Înregistrare *</div>
-            <input class="field-input" id="input-cui" type="text" placeholder="ex: RO12345678" inputmode="text" />
+                autocomplete="organization" style="text-transform:uppercase;"
+                oninput="this.value=this.value.toUpperCase()" />
+            <div class="field-label" style="margin-top:12px;">CUI / Cod unic de înregistrare *</div>
+            <input class="field-input" id="input-cui" type="text" placeholder="ex: RO12345678" inputmode="text"
+                style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" />
         </div>
 
         <div class="tip-box" style="margin-bottom:12px;">
             💡 <strong>Sfat:</strong> Pregătește lista scrisă și citește articolele pe rând în aplicație.
         </div>
 
-        <button class="btn btn-primary" onclick="startApp()">
+        <!-- Consimtamant GDPR -->
+        <label
+            style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin-bottom:12px; padding:12px 14px; background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.25); border-radius:12px;">
+            <input type="checkbox" id="consent-check"
+                style="margin-top:3px; width:18px; height:18px; accent-color:var(--accent); flex-shrink:0;"
+                onchange="document.getElementById('btn-start').disabled=!this.checked;" />
+            <span style="font-size:12px; color:var(--muted); line-height:1.5;">
+                Sunt de acord ca datele introduse (nume firmă, CUI, listă articole) să fie folosite de tehnicianul de
+                service <strong style="color:var(--text);">exclusiv în scopul programării casei de marcat</strong>.
+            </span>
+        </label>
+
+        <button class="btn btn-primary" id="btn-start" onclick="startApp()" disabled style="opacity:0.5;">
             ▶ Începe completarea listei
         </button>
     </div>
@@ -610,7 +713,7 @@
     <div class="screen" id="screen-main">
         <div class="app-header">
             <div class="app-logo">🎙️</div>
-            <div class="app-title">Adaugă Articole</div>
+            <div class="app-title">Adaugă articole</div>
             <div class="app-subtitle" id="firma-display">–</div>
         </div>
 
@@ -656,7 +759,7 @@
     <div class="screen" id="screen-confirm">
         <div class="app-header">
             <div class="app-logo">✔️</div>
-            <div class="app-title">Confirmare Articol</div>
+            <div class="app-title">Confirmare articol</div>
             <div class="app-subtitle">Verifică articolul detectat</div>
         </div>
 
@@ -683,7 +786,7 @@
     <div class="screen" id="screen-modify">
         <div class="app-header">
             <div class="app-logo">✏️</div>
-            <div class="app-title">Modifică Articolul</div>
+            <div class="app-title">Modifică articolul</div>
         </div>
 
         <div class="modify-hint">Corectează articolul de mai jos:</div>
@@ -700,7 +803,7 @@
     <div class="screen" id="screen-finish">
         <div class="app-header">
             <div class="app-logo">📤</div>
-            <div class="app-title">Finalizare Listă</div>
+            <div class="app-title">Finalizare listă</div>
             <div class="app-subtitle">Verifică lista completă înainte de trimitere</div>
         </div>
 
@@ -729,7 +832,7 @@
     <!-- ===== SCREEN 5: SUCCESS ===== -->
     <div class="screen" id="screen-success">
         <div class="success-icon">🎉</div>
-        <div class="success-title">Lista a fost trimisă!</div>
+        <div class="success-title">Lista a fost trimisă! 🎉</div>
         <div class="success-msg" id="success-msg">Tehnicianul a primit lista.<br />Îți mulțumim!</div>
 
         <div class="card mt20">
@@ -742,8 +845,13 @@
 
 
     <script>
-        // ===== CONFIG =====
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCl1BuKhnXgFux5BEw8VYLcpRot3Ja2h6D2ks01EMB2IAcLilGzxWlD7_dhSqfWc0E/exec'; // <-- vei înlocui asta după deploy
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║              ⚙️  CONFIGURARE – MODIFICĂ AICI                ║
+        // ╠══════════════════════════════════════════════════════════════╣
+        // ║  Înlocuiește URL-ul de mai jos cu link-ul tău Apps Script   ║
+        // ║  după ce faci Deploy în Google Apps Script.                  ║
+        // ╚══════════════════════════════════════════════════════════════╝
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCl1BuKhnXgFux5BEw8VYLcpRot3Ja2h6D2ks01EMB2IAcLilGzxWlD7_dhSqfWc0E/exec';
 
         // ===== STATE =====
         let articles = [];
@@ -810,11 +918,46 @@
         }
         detectInAppBrowser();
 
+        // ===== LOCALSTORAGE =====
+        function lsKey(cui) { return 'lista_cmc_' + cui.replace(/\s/g, ''); }
+
+        function saveSession() {
+            const firma = document.getElementById('input-firma').value.trim();
+            const cui = document.getElementById('input-cui').value.trim();
+            if (!cui || articles.length === 0) return;
+            localStorage.setItem(lsKey(cui), JSON.stringify({ firma, cui, articles }));
+        }
+
+        function clearSession(cui) {
+            localStorage.removeItem(lsKey(cui));
+        }
+
         function startApp() {
             const firma = document.getElementById('input-firma').value.trim();
             const cui = document.getElementById('input-cui').value.trim();
             if (!firma) { alert('Te rugăm să introduci numele firmei.'); return; }
             if (!cui) { alert('Te rugăm să introduci CUI-ul firmei.'); return; }
+
+            // Verifica sesiune anterioara
+            const saved = localStorage.getItem(lsKey(cui));
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    if (data.articles && data.articles.length > 0) {
+                        const continua = confirm(
+                            '📋 Există ' + data.articles.length + ' articole salvate pentru ' + data.firma + '.\n\nApasă OK pentru a CONTINUA sesiunea.\nApasă Anulează pentru a șterge și a începe de la zero.'
+                        );
+                        if (continua) {
+                            articles = data.articles;
+                        } else {
+                            articles = [];
+                            clearSession(cui);
+                        }
+                        renderList();
+                    }
+                } catch (e) { localStorage.removeItem(lsKey(cui)); }
+            }
+
             document.getElementById('firma-display').textContent = firma + ' | ' + cui;
             showScreen('screen-main');
             initSpeech();
@@ -835,8 +978,7 @@
             recognition.maxAlternatives = 1;
 
             recognition.onspeechend = () => {
-                // Feedback imediat cand utilizatorul termina de vorbit
-                document.getElementById('mic-status').textContent = '🔄 Se procesează...';
+                document.getElementById('processing-overlay').classList.add('show');
             };
 
             recognition.onresult = (e) => {
@@ -879,6 +1021,10 @@
             document.getElementById('mic-status').textContent = '';
         }
 
+        function hideOverlay() {
+            document.getElementById('processing-overlay').classList.remove('show');
+        }
+
         // ===== MANUAL INPUT =====
         function addManual() {
             const val = document.getElementById('manual-input').value.trim();
@@ -890,6 +1036,7 @@
 
         // ===== SCREEN 3: CONFIRM =====
         function showConfirm(word) {
+            hideOverlay();
             document.getElementById('confirm-word').textContent = word;
             showScreen('screen-confirm');
         }
@@ -898,6 +1045,7 @@
             if (pendingArticle) {
                 articles.push(pendingArticle);
                 renderList();
+                saveSession(); // salveaza progresul
             }
             pendingArticle = '';
             showScreen('screen-main');
@@ -969,6 +1117,8 @@
         }
 
         function showSuccess(firma, arts) {
+            const cui = document.getElementById('input-cui').value.trim();
+            clearSession(cui); // sterge sesiunea dupa trimitere
             document.getElementById('success-msg').innerHTML =
                 `<strong>${firma}</strong> — tehnicianul a primit lista!<br/>Mulțumim și pe curând! 😊`;
             document.getElementById('success-preview').innerHTML =
@@ -978,6 +1128,8 @@
 
         // ===== RESET =====
         function resetApp() {
+            const cui = document.getElementById('input-cui').value.trim();
+            clearSession(cui);
             articles = [];
             pendingArticle = '';
             renderList();
@@ -989,4 +1141,3 @@
 </body>
 
 </html>
-
