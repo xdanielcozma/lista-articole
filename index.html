@@ -775,13 +775,13 @@
 
         <!-- Creare lista noua -->
         <div
-            style="display:flex; gap:8px; align-items:center; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:14px;">
+            style="display:flex; gap:8px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:10px 12px; box-sizing:border-box; width:100%;">
             <input class="field-input" id="new-session-name" type="text"
                 placeholder="Nume listă nouă (ex: Casa 1, Cluj)..."
-                style="flex:1; padding:11px 14px; margin:0; border-radius:10px;"
+                style="flex:1; padding:10px 12px; margin:0; border-radius:10px; min-width:0;"
                 onkeydown="if(event.key==='Enter') createNewSession()" />
             <button class="btn btn-primary" onclick="createNewSession()"
-                style="min-width:52px; height:46px; font-size:22px; padding:0; border-radius:10px; flex-shrink:0;">+</button>
+                style="width:46px; height:46px; font-size:22px; padding:0; border-radius:10px; flex-shrink:0;">+</button>
         </div>
     </div>
 
@@ -1210,6 +1210,10 @@
             const btn = document.getElementById('mic-btn');
             btn.classList.remove('listening');
             btn.textContent = '🎙️';
+            // Curata textul de status (Procesez... sau live text)
+            const st = document.getElementById('mic-status');
+            st.textContent = '';
+            st.style.color = '';
         }
 
         function hideOverlay() {
