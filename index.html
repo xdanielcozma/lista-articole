@@ -692,21 +692,36 @@
             💡 <strong>Sfat:</strong> Pregătește lista scrisă și citește articolele pe rând în aplicație.
         </div>
 
-        <!-- Consimtamant GDPR -->
-        <label
-            style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin-bottom:12px; padding:12px 14px; background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.25); border-radius:12px;">
-            <input type="checkbox" id="consent-check"
-                style="margin-top:3px; width:18px; height:18px; accent-color:var(--accent); flex-shrink:0;"
-                onchange="document.getElementById('btn-start').disabled=!this.checked;" />
-            <span style="font-size:12px; color:var(--muted); line-height:1.5;">
-                Sunt de acord ca datele introduse (nume firmă, CUI, listă articole) să fie folosite de tehnicianul de
-                service <strong style="color:var(--text);">exclusiv în scopul programării casei de marcat</strong>.
-            </span>
-        </label>
-
-        <button class="btn btn-primary" id="btn-start" onclick="startApp()" disabled style="opacity:0.5;">
+        <button class="btn btn-primary" id="btn-start" onclick="startApp()">
             ▶ Începe completarea listei
         </button>
+    </div>
+
+    <!-- ===== SCREEN 1B: SESIUNE SALVATA ===== -->
+    <div class="screen" id="screen-resume">
+        <div class="app-header">
+            <div class="app-logo">📋</div>
+            <div class="app-title">Listă salvată</div>
+            <div class="app-subtitle" id="resume-subtitle">–</div>
+        </div>
+
+        <div class="card" style="flex:1; max-height:45vh; overflow-y:auto;">
+            <div class="list-header">
+                <div class="list-title">📋 Articole salvate</div>
+                <div class="badge" id="resume-badge">0 articole</div>
+            </div>
+            <ul class="article-list" id="resume-list" style="max-height:none;"></ul>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+            <button class="btn btn-success" onclick="resumeSession()">
+                ✅ Continuă această listă
+            </button>
+            <button class="btn btn-outline" onclick="discardSession()"
+                style="border-color:var(--red); color:var(--red);">
+                🗑️ Şterge și începe listă nouă
+            </button>
+        </div>
     </div>
 
     <!-- ===== SCREEN 2: MAIN (add items) ===== -->
@@ -938,27 +953,51 @@
             if (!firma) { alert('Te rugăm să introduci numele firmei.'); return; }
             if (!cui) { alert('Te rugăm să introduci CUI-ul firmei.'); return; }
 
+            document.getElementById('firma-display').textContent = firma + ' | ' + cui;
+
             // Verifica sesiune anterioara
             const saved = localStorage.getItem(lsKey(cui));
             if (saved) {
                 try {
                     const data = JSON.parse(saved);
                     if (data.articles && data.articles.length > 0) {
-                        const continua = confirm(
-                            '📋 Există ' + data.articles.length + ' articole salvate pentru ' + data.firma + '.\n\nApasă OK pentru a CONTINUA sesiunea.\nApasă Anulează pentru a șterge și a începe de la zero.'
-                        );
-                        if (continua) {
-                            articles = data.articles;
-                        } else {
-                            articles = [];
-                            clearSession(cui);
-                        }
-                        renderList();
+                        // Arata ecranul sesiunii salvate
+                        const n = data.articles.length;
+                        document.getElementById('resume-subtitle').textContent =
+                            (data.firma || firma) + ' — ' + n + (n === 1 ? ' articol salvat' : ' articole salvate');
+                        document.getElementById('resume-badge').textContent = n + (n === 1 ? ' articol' : ' articole');
+                        document.getElementById('resume-list').innerHTML =
+                            data.articles.map((a, i) => `<li class="article-item"><span class="article-num">${i + 1}.</span><span class="article-name">${a}</span></li>`).join('');
+                        // Stocheaza temporar pentru butoane
+                        window._resumeData = data;
+                        showScreen('screen-resume');
+                        return;
                     }
                 } catch (e) { localStorage.removeItem(lsKey(cui)); }
             }
 
-            document.getElementById('firma-display').textContent = firma + ' | ' + cui;
+            goToMain();
+        }
+
+        function resumeSession() {
+            if (window._resumeData) {
+                articles = window._resumeData.articles;
+                renderList();
+                window._resumeData = null;
+            }
+            goToMain();
+        }
+
+        function discardSession() {
+            // Nu stergem lista din memorie! Poate are mai multe case de marcat.
+            // Lista veche va fi suprascrisă automat când se adaugă articole noi.
+            articles = [];
+            renderList();
+            window._resumeData = null;
+            goToMain();
+        }
+
+        function goToMain() {
             showScreen('screen-main');
             initSpeech();
         }
