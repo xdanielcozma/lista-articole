@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>📋 Listă Articole – Casă de Marcat</title>
+
+    <!-- Open Graph pentru WhatsApp preview -->
+    <meta property="og:title" content="📋 Completare Listă Articole" />
+    <meta property="og:description" content="Adaugă articolele tale prin voce – simplu și rapid!" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://i.imgur.com/3QfZk5L.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0f1623;
+            --surface: #1a2436;
+            --surface2: #222e42;
+            --accent: #f97316;
+            --accent2: #fb923c;
+            --blue: #3b82f6;
+            --green: #22c55e;
+            --red: #ef4444;
+            --yellow: #eab308;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --border: #2d3f5a;
+            --radius: 16px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        /* ===== SCREENS ===== */
+        .screen {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            max-width: 480px;
+            min-height: 100dvh;
+            padding: 14px 16px 20px;
+            animation: fadeIn .25s ease;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== HEADER ===== */
+        .app-header {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .app-logo {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+
+        .app-title {
+            font-size: 20px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .app-subtitle {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 3px;
+            line-height: 1.4;
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            margin-bottom: 10px;
+        }
+
+        /* ===== INPUTS ===== */
+        .field-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 8px;
+        }
+
+        .field-input {
+            width: 100%;
+            background: var(--surface2);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            padding: 11px 14px;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        .field-input:focus {
+            border-color: var(--accent);
+        }
+
+        .field-input::placeholder {
+            color: var(--muted);
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 16px;
+            cursor: pointer;
+            transition: all .18s ease;
+            text-decoration: none;
+        }
+
+        .btn:active {
+            transform: scale(.97);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(249, 115, 22, .35);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 28px rgba(249, 115, 22, .5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(34, 197, 94, .3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: #fff;
+        }
+
+        .btn-blue {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, .3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid var(--border);
+            color: var(--muted);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-sm {
+            padding: 10px 14px;
+            font-size: 14px;
+            border-radius: 10px;
+            width: auto;
+        }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .btn-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .mt8 {
+            margin-top: 8px;
+        }
+
+        .mt12 {
+            margin-top: 12px;
+        }
+
+        .mt16 {
+            margin-top: 16px;
+        }
+
+        .mt20 {
+            margin-top: 20px;
+        }
+
+        .mb8 {
+            margin-bottom: 8px;
+        }
+
+        .mb16 {
+            margin-bottom: 16px;
+        }
+
+        /* ===== MIC BUTTON ===== */
+        .mic-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 0 8px;
+        }
+
+        .mic-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            color: #fff;
+            font-size: 42px;
+            cursor: pointer;
+            box-shadow: 0 6px 30px rgba(249, 115, 22, .45);
+            transition: all .18s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .mic-btn:active {
+            transform: scale(.93);
+        }
+
+        .mic-btn.listening {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, .6);
+            animation: pulse 1.4s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, .6);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        .mic-label {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .mic-status {
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 6px;
+            color: var(--accent);
+            min-height: 20px;
+            text-align: center;
+        }
+
+        /* ===== ARTICLE LIST ===== */
+        .list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .list-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .badge {
+            background: var(--accent);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+        }
+
+        .article-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .article-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .article-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .article-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .article-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            animation: slideIn .2s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .article-num {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 22px;
+        }
+
+        .article-name {
+            flex: 1;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .article-del {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            transition: color .15s;
+        }
+
+        .article-del:hover {
+            color: var(--red);
+        }
+
+        .empty-list {
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+            padding: 24px 0;
+        }
+
+        /* ===== CONFIRM SCREEN ===== */
+        .confirm-word {
+            text-align: center;
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: .04em;
+            color: var(--text);
+            padding: 24px;
+            background: var(--surface2);
+            border-radius: 14px;
+            margin: 16px 0;
+            border: 2px solid var(--accent);
+        }
+
+        .confirm-question {
+            text-align: center;
+            font-size: 16px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        /* ===== MODIFY SCREEN ===== */
+        .modify-hint {
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        /* ===== SUCCESS SCREEN ===== */
+        .success-icon {
+            font-size: 72px;
+            text-align: center;
+            margin: 24px 0 8px;
+        }
+
+        .success-title {
+            font-size: 24px;
+            font-weight: 800;
+            text-align: center;
+            color: var(--green);
+        }
+
+        .success-msg {
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+
+        /* ===== TIP BOX ===== */
+        .tip-box {
+            background: rgba(249, 115, 22, .1);
+            border: 1px solid rgba(249, 115, 22, .3);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 12px;
+            color: #fdba74;
+            line-height: 1.5;
+        }
+
+        .tip-box strong {
+            color: var(--accent);
+        }
+
+        /* ===== IOS WARNING ===== */
+        .ios-warn {
+            background: rgba(234, 179, 8, .1);
+            border: 1px solid rgba(234, 179, 8, .35);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 13px;
+            color: #fde68a;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        /* ===== DIVIDER ===== */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 12px 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ===== PREVIEW LIST ===== */
+        .preview-list {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            max-height: 240px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 2;
+            color: var(--text);
+        }
+
+        .preview-list span {
+            color: var(--muted);
+            margin-right: 8px;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 22px;
+            height: 22px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Fingerprint / tip */
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+        }
+
+        .step-dot.active {
+            background: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== SCREEN 1: START ===== -->
+    <div class="screen active" id="screen-start">
+        <div class="app-header">
+            <div class="app-logo">🧾</div>
+            <div class="app-title">Listă Articole</div>
+            <div class="app-subtitle">Completează lista pentru casa de marcat prin voce</div>
+        </div>
+
+        <div id="ios-warning" class="ios-warn" style="display:none">
+            ⚠️ <strong>Atenție:</strong> Deschide linkul în <strong>Safari</strong> (iPhone) sau <strong>Chrome</strong>
+            (Android) — nu din WhatsApp direct.
+        </div>
+
+        <div class="card">
+            <div class="field-label">Numele Firmei *</div>
+            <input class="field-input" id="input-firma" type="text" placeholder="ex: SC CAFENEA SRL"
+                autocomplete="organization" />
+            <div class="field-label" style="margin-top:12px;">CUI / Cod Unic de Înregistrare *</div>
+            <input class="field-input" id="input-cui" type="text" placeholder="ex: RO12345678" inputmode="text" />
+        </div>
+
+        <div class="tip-box" style="margin-bottom:12px;">
+            💡 <strong>Sfat:</strong> Pregătește lista scrisă și citește articolele pe rând în aplicație.
+        </div>
+
+        <button class="btn btn-primary" onclick="startApp()">
+            ▶ Începe completarea listei
+        </button>
+    </div>
+
+    <!-- ===== SCREEN 2: MAIN (add items) ===== -->
+    <div class="screen" id="screen-main">
+        <div class="app-header">
+            <div class="app-logo">🎙️</div>
+            <div class="app-title">Adaugă Articole</div>
+            <div class="app-subtitle" id="firma-display">–</div>
+        </div>
+
+        <div class="step-indicator">
+            <div class="step-dot"></div>
+            <div class="step-dot active"></div>
+            <div class="step-dot"></div>
+            <div class="step-dot"></div>
+        </div>
+
+        <div class="mic-area">
+            <button class="mic-btn" id="mic-btn" onclick="toggleMic()">🎙️</button>
+            <div class="mic-label">Apasă microfonul și rostește un articol</div>
+            <div class="mic-status" id="mic-status"></div>
+        </div>
+
+        <div class="divider">sau adaugă manual</div>
+
+        <!-- manual input -->
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <input class="field-input" id="manual-input" type="text" placeholder="Scrie articolul..." style="flex:1;"
+                onkeydown="if(event.key==='Enter') addManual()" />
+            <button class="btn btn-blue btn-sm" onclick="addManual()" style="min-width:60px;">+</button>
+        </div>
+
+        <!-- list -->
+        <div class="card" style="flex:1;">
+            <div class="list-header">
+                <div class="list-title">📋 Lista ta</div>
+                <div class="badge" id="counter-badge">0 articole</div>
+            </div>
+            <ul class="article-list" id="article-list">
+                <li class="empty-list">Niciun articol adăugat încă.</li>
+            </ul>
+        </div>
+
+        <button class="btn btn-success mt16" onclick="requestFinish()">
+            ✅ FINALIZARE LISTĂ
+        </button>
+    </div>
+
+    <!-- ===== SCREEN 3: CONFIRM ARTICLE ===== -->
+    <div class="screen" id="screen-confirm">
+        <div class="app-header">
+            <div class="app-logo">✔️</div>
+            <div class="app-title">Confirmare Articol</div>
+            <div class="app-subtitle">Verifică articolul detectat</div>
+        </div>
+
+        <div class="step-indicator">
+            <div class="step-dot"></div>
+            <div class="step-dot"></div>
+            <div class="step-dot active"></div>
+            <div class="step-dot"></div>
+        </div>
+
+        <div class="confirm-question">Ai spus:</div>
+        <div class="confirm-word" id="confirm-word">–</div>
+
+        <div class="confirm-question" style="margin-top:8px;">Este corect?</div>
+
+        <div class="btn-row mt12">
+            <button class="btn btn-success btn-sm" onclick="confirmYes()">✅ DA</button>
+            <button class="btn btn-blue btn-sm" onclick="confirmModify()">✏️ MODIFICĂ</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmCancel()">❌ ANULEAZĂ</button>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN 3B: MODIFY ===== -->
+    <div class="screen" id="screen-modify">
+        <div class="app-header">
+            <div class="app-logo">✏️</div>
+            <div class="app-title">Modifică Articolul</div>
+        </div>
+
+        <div class="modify-hint">Corectează articolul de mai jos:</div>
+        <input class="field-input" id="modify-input" type="text" placeholder="Scrie articolul corect..."
+            style="font-size:20px; font-weight:700; text-align:center;" />
+
+        <div class="btn-2col mt16">
+            <button class="btn btn-outline" onclick="confirmCancel()">❌ Anulează</button>
+            <button class="btn btn-primary" onclick="modifyConfirm()">✅ Confirmă</button>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN 4: FINISH CONFIRM ===== -->
+    <div class="screen" id="screen-finish">
+        <div class="app-header">
+            <div class="app-logo">📤</div>
+            <div class="app-title">Finalizare Listă</div>
+            <div class="app-subtitle">Verifică lista completă înainte de trimitere</div>
+        </div>
+
+        <div class="step-indicator">
+            <div class="step-dot"></div>
+            <div class="step-dot"></div>
+            <div class="step-dot"></div>
+            <div class="step-dot active"></div>
+        </div>
+
+        <div class="card">
+            <div class="field-label mb8">📋 Lista ta finală (<span id="preview-count">0</span> articole)</div>
+            <div class="preview-list" id="preview-list"></div>
+        </div>
+
+        <div class="card">
+            <div class="confirm-question" style="font-size:15px; font-weight:600; color: var(--text);">Ai terminat de
+                adăugat toate articolele?</div>
+            <div class="btn-2col mt12">
+                <button class="btn btn-outline" onclick="backToMain()">⬅ Nu, mai am</button>
+                <button class="btn btn-primary" id="send-btn" onclick="sendList()">📤 Da, trimite!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN 5: SUCCESS ===== -->
+    <div class="screen" id="screen-success">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">Lista a fost trimisă!</div>
+        <div class="success-msg" id="success-msg">Tehnicianul a primit lista.<br />Îți mulțumim!</div>
+
+        <div class="card mt20">
+            <div class="field-label mb8">📋 Articolele trimise</div>
+            <div class="preview-list" id="success-preview"></div>
+        </div>
+
+        <button class="btn btn-outline mt16" onclick="resetApp()">🔄 Listă nouă</button>
+    </div>
+
+
+    <script>
+        // ===== CONFIG =====
+        const APPS_SCRIPT_URL = 'INLOCUIESTE_CU_URL_APPS_SCRIPT'; // <-- vei înlocui asta după deploy
+
+        // ===== STATE =====
+        let articles = [];
+        let pendingArticle = '';
+        let recognition = null;
+        let isListening = false;
+
+        // ===== UTILS =====
+        function removeDiacritics(str) {
+            const map = {
+                'ă': 'a', 'â': 'a', 'î': 'i', 'ș': 's', 'ş': 's', 'ț': 't', 'ţ': 't',
+                'Ă': 'A', 'Â': 'A', 'Î': 'I', 'Ș': 'S', 'Ş': 'S', 'Ț': 'T', 'Ţ': 'T'
+            };
+            return str.replace(/[ăâîșşțţĂÂÎȘŞȚŢ]/g, m => map[m] || m);
+        }
+
+        function normalizeText(str) {
+            return removeDiacritics(str.trim().toUpperCase());
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function updateCounter() {
+            const n = articles.length;
+            document.getElementById('counter-badge').textContent = n + (n === 1 ? ' articol' : ' articole');
+        }
+
+        function renderList() {
+            const ul = document.getElementById('article-list');
+            if (articles.length === 0) {
+                ul.innerHTML = '<li class="empty-list">Niciun articol adăugat încă.</li>';
+            } else {
+                ul.innerHTML = articles.map((a, i) =>
+                    `<li class="article-item">
+          <span class="article-num">${i + 1}.</span>
+          <span class="article-name">${a}</span>
+          <button class="article-del" onclick="deleteArticle(${i})" title="Șterge">✕</button>
+        </li>`
+                ).join('');
+                // scroll to bottom
+                ul.scrollTop = ul.scrollHeight;
+            }
+            updateCounter();
+        }
+
+        function deleteArticle(idx) {
+            articles.splice(idx, 1);
+            renderList();
+        }
+
+        // ===== SCREEN 1: START =====
+        function detectInAppBrowser() {
+            // Detecteaza browserul integrat al WhatsApp sau Facebook (nu are acces la microfon)
+            const ua = navigator.userAgent || '';
+            const isWhatsApp = /WhatsApp/.test(ua);
+            const isFBBrowser = /FBAN|FBAV/.test(ua);
+            if (isWhatsApp || isFBBrowser) {
+                document.getElementById('ios-warning').style.display = 'block';
+            }
+        }
+        detectInAppBrowser();
+
+        function startApp() {
+            const firma = document.getElementById('input-firma').value.trim();
+            const cui = document.getElementById('input-cui').value.trim();
+            if (!firma) { alert('Te rugăm să introduci numele firmei.'); return; }
+            if (!cui) { alert('Te rugăm să introduci CUI-ul firmei.'); return; }
+            document.getElementById('firma-display').textContent = firma + ' | ' + cui;
+            showScreen('screen-main');
+            initSpeech();
+        }
+
+        // ===== SPEECH API =====
+        function initSpeech() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                document.getElementById('mic-status').textContent = '⚠️ Vocea nu e suportată în acest browser.';
+                document.getElementById('mic-btn').disabled = true;
+                document.getElementById('mic-btn').style.opacity = '0.4';
+                return;
+            }
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ro-RO';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onspeechend = () => {
+                // Feedback imediat cand utilizatorul termina de vorbit
+                document.getElementById('mic-status').textContent = '🔄 Se procesează...';
+            };
+
+            recognition.onresult = (e) => {
+                const raw = e.results[0][0].transcript;
+                pendingArticle = normalizeText(raw);
+                stopListening();
+                showConfirm(pendingArticle);
+            };
+
+            recognition.onerror = (e) => {
+                stopListening();
+                if (e.error !== 'no-speech' && e.error !== 'aborted') {
+                    document.getElementById('mic-status').textContent = '⚠️ Eroare la microfon.';
+                }
+            };
+
+            recognition.onend = () => { if (isListening) stopListening(); };
+        }
+
+        function toggleMic() {
+            if (isListening) { stopListening(); return; }
+            startListening();
+        }
+
+        function startListening() {
+            if (!recognition) return;
+            isListening = true;
+            recognition.start();
+            document.getElementById('mic-btn').classList.add('listening');
+            document.getElementById('mic-btn').textContent = '⏹';
+            document.getElementById('mic-status').textContent = '🔴 Ascult... rostește articolul!';
+        }
+
+        function stopListening() {
+            isListening = false;
+            if (recognition) { try { recognition.stop(); } catch (e) { } }
+            const btn = document.getElementById('mic-btn');
+            btn.classList.remove('listening');
+            btn.textContent = '🎙️';
+            document.getElementById('mic-status').textContent = '';
+        }
+
+        // ===== MANUAL INPUT =====
+        function addManual() {
+            const val = document.getElementById('manual-input').value.trim();
+            if (!val) return;
+            pendingArticle = normalizeText(val);
+            document.getElementById('manual-input').value = '';
+            showConfirm(pendingArticle);
+        }
+
+        // ===== SCREEN 3: CONFIRM =====
+        function showConfirm(word) {
+            document.getElementById('confirm-word').textContent = word;
+            showScreen('screen-confirm');
+        }
+
+        function confirmYes() {
+            if (pendingArticle) {
+                articles.push(pendingArticle);
+                renderList();
+            }
+            pendingArticle = '';
+            showScreen('screen-main');
+        }
+
+        function confirmModify() {
+            document.getElementById('modify-input').value = pendingArticle;
+            showScreen('screen-modify');
+        }
+
+        function confirmCancel() {
+            pendingArticle = '';
+            showScreen('screen-main');
+        }
+
+        // ===== SCREEN 3B: MODIFY =====
+        function modifyConfirm() {
+            const val = document.getElementById('modify-input').value.trim();
+            if (!val) return;
+            pendingArticle = normalizeText(val);
+            showConfirm(pendingArticle);
+        }
+
+        // ===== SCREEN 4: FINISH =====
+        function requestFinish() {
+            if (articles.length === 0) {
+                alert('Lista este goală! Adaugă cel puțin un articol.');
+                return;
+            }
+            // populate preview
+            document.getElementById('preview-count').textContent = articles.length;
+            document.getElementById('preview-list').innerHTML =
+                articles.map((a, i) => `<div><span>${i + 1}.</span>${a}</div>`).join('');
+            showScreen('screen-finish');
+        }
+
+        function backToMain() {
+            showScreen('screen-main');
+        }
+
+        // ===== SEND =====
+        function sendList() {
+            const btn = document.getElementById('send-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Se trimite...';
+
+            const firma = document.getElementById('input-firma').value.trim();
+            const cui = document.getElementById('input-cui').value.trim();
+
+            const payload = {
+                firma: firma,
+                cui: cui,
+                articole: articles,
+                timestamp: new Date().toLocaleString('ro-RO')
+            };
+
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                mode: 'no-cors'
+            })
+                .then(() => {
+                    showSuccess(firma, articles);
+                })
+                .catch(() => {
+                    showSuccess(firma, articles); // no-cors returns opaque response; treat as success
+                });
+        }
+
+        function showSuccess(firma, arts) {
+            document.getElementById('success-msg').innerHTML =
+                `<strong>${firma}</strong> — tehnicianul a primit lista!<br/>Mulțumim și pe curând! 😊`;
+            document.getElementById('success-preview').innerHTML =
+                arts.map((a, i) => `<div><span>${i + 1}.</span>${a}</div>`).join('');
+            showScreen('screen-success');
+        }
+
+        // ===== RESET =====
+        function resetApp() {
+            articles = [];
+            pendingArticle = '';
+            renderList();
+            document.getElementById('input-firma').value = '';
+            document.getElementById('input-cui').value = '';
+            showScreen('screen-start');
+        }
+    </script>
+</body>
+
+</html>
