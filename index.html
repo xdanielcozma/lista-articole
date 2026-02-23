@@ -804,11 +804,8 @@
         </div>
 
         <div class="mic-area">
-            <button class="mic-btn" id="mic-btn" onmousedown="startMicPTT(event)" ontouchstart="startMicPTT(event)"
-                onmouseup="stopMicPTT()" ontouchend="stopMicPTT()"
-                onmouseleave="if(isListening) stopMicPTT()">&#127897;&#65039;</button>
-            <div class="mic-label">&#128073; <strong>&#538;ine ap&#259;sat</strong> &#351;i vorbe&#351;te articolul
-            </div>
+            <button class="mic-btn" id="mic-btn" onclick="toggleMic()">&#127897;&#65039;</button>
+            <div class="mic-label">Apasă microfonul și rostește un articol</div>
             <div class="mic-status" id="mic-status"></div>
         </div>
 
@@ -1199,44 +1196,24 @@
         }
 
         function toggleMic() {
-            // Fallback pentru tastatura (spatiu)
-            if (isListening) { stopMicPTT(); return; }
-            startMicPTT({ preventDefault: () => { } });
+            if (isListening) { stopListening(); return; }
+            startListening();
         }
 
-        function startMicPTT(e) {
-            if (e && e.preventDefault) e.preventDefault(); // previne double-fire touch+mouse
-            if (isListening) return;
+        function startListening() {
             if (!recognition) return;
-
-            // Seteaza imediat starea — NU async, sa nu existe race condition
             isListening = true;
             try { recognition.start(); } catch (ex) { }
-
             const btn = document.getElementById('mic-btn');
             btn.classList.add('listening');
-            btn.textContent = '🔴';
-            document.getElementById('mic-status').textContent = '🎙 Vorbește acum...';
-            document.getElementById('mic-status').style.color = 'var(--accent)';
-
-            // Filtrele audio ruleaza in background — nu blocam pornirea
-            navigator.mediaDevices.getUserMedia({
-                audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true }
-            }).then(s => { window._micStream = s; }).catch(() => { });
-        }
-
-        function stopMicPTT() {
-            if (!isListening) return;
-            // Opreste recunoasterea — onresult se va declansa cu ce s-a spus
-            document.getElementById('mic-status').textContent = '⏳ Procesez...';
+            btn.textContent = '⏹';
+            document.getElementById('mic-status').textContent = '🔴 Ascult... rostește articolul!';
             document.getElementById('mic-status').style.color = '';
-            if (recognition) { try { recognition.stop(); } catch (e) { } }
         }
 
         function stopListening() {
             isListening = false;
             if (recognition) { try { recognition.stop(); } catch (e) { } }
-            // Inchide stream-ul microfon (elibereaza indicatorul de microfon activ)
             if (window._micStream) {
                 window._micStream.getTracks().forEach(t => t.stop());
                 window._micStream = null;
@@ -1248,6 +1225,8 @@
             st.textContent = '';
             st.style.color = '';
         }
+
+
 
         function hideOverlay() {
             document.getElementById('processing-overlay').classList.remove('show');
