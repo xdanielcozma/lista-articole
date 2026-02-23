@@ -1204,31 +1204,25 @@
             startMicPTT({ preventDefault: () => { } });
         }
 
-        async function startMicPTT(e) {
+        function startMicPTT(e) {
             if (e && e.preventDefault) e.preventDefault(); // previne double-fire touch+mouse
             if (isListening) return;
+            if (!recognition) return;
 
-            // Cere microfonul cu filtre de zgomot active
-            try {
-                window._micStream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        noiseSuppression: true,
-                        echoCancellation: true,
-                        autoGainControl: true,
-                        channelCount: 1
-                    }
-                });
-            } catch (err) {
-                console.warn('getUserMedia cu filtre:', err);
-            }
-
+            // Seteaza imediat starea — NU async, sa nu existe race condition
             isListening = true;
             try { recognition.start(); } catch (ex) { }
+
             const btn = document.getElementById('mic-btn');
             btn.classList.add('listening');
             btn.textContent = '🔴';
             document.getElementById('mic-status').textContent = '🎙 Vorbește acum...';
             document.getElementById('mic-status').style.color = 'var(--accent)';
+
+            // Filtrele audio ruleaza in background — nu blocam pornirea
+            navigator.mediaDevices.getUserMedia({
+                audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true }
+            }).then(s => { window._micStream = s; }).catch(() => { });
         }
 
         function stopMicPTT() {
