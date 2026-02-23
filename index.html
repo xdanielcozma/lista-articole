@@ -1167,13 +1167,18 @@
                 if (interim) {
                     document.getElementById('mic-status').textContent = '🎙 ' + interim;
 
-                    // Dupa 600ms fara vorbire noua → declanseaza rezultatul final
+                    // Dupa 200ms fara vorbire noua → confirmare instantanee cu textul deja afisat
                     clearTimeout(window._silenceTimer);
                     window._silenceTimer = setTimeout(() => {
-                        if (isListening && recognition) {
-                            try { recognition.stop(); } catch (ex) { }
+                        if (!isListening) return;
+                        const captured = document.getElementById('mic-status')
+                            .textContent.replace('🎙 ', '').trim();
+                        if (captured) {
+                            pendingArticle = normalizeText(captured);
+                            stopListening();
+                            showConfirm(pendingArticle);
                         }
-                    }, 600);
+                    }, 200);
                 }
 
                 if (final) {
