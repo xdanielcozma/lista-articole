@@ -804,8 +804,11 @@
         </div>
 
         <div class="mic-area">
-            <button class="mic-btn" id="mic-btn" onclick="toggleMic()">🎙️</button>
-            <div class="mic-label">Apasă microfonul și rostește un articol</div>
+            <button class="mic-btn" id="mic-btn" onmousedown="startMicPTT(event)" ontouchstart="startMicPTT(event)"
+                onmouseup="stopMicPTT()" ontouchend="stopMicPTT()"
+                onmouseleave="if(isListening) stopMicPTT()">&#127897;&#65039;</button>
+            <div class="mic-label">&#128073; <strong>&#538;ine ap&#259;sat</strong> &#351;i vorbe&#351;te articolul
+            </div>
             <div class="mic-status" id="mic-status"></div>
         </div>
 
@@ -1171,7 +1174,13 @@
                 }
 
                 if (final) {
-                    // Rezultat final — arata confirmarea instant
+                    const confidence = e.results[e.results.length - 1][0].confidence;
+                    // Ignora zgomotul de fundal interpretat cu incredere scazuta
+                    if (confidence > 0 && confidence < 0.45) {
+                        document.getElementById('mic-status').textContent = '🔇 Zgomot ignorat, încearcă din nou';
+                        setTimeout(() => stopListening(), 1500);
+                        return;
+                    }
                     pendingArticle = normalizeText(final);
                     stopListening();
                     showConfirm(pendingArticle);
@@ -1190,27 +1199,57 @@
         }
 
         function toggleMic() {
-            if (isListening) { stopListening(); return; }
-            startListening();
+            // Fallback pentru tastatura (spatiu)
+            if (isListening) { stopMicPTT(); return; }
+            startMicPTT({ preventDefault: () => { } });
         }
 
-        function startListening() {
-            if (!recognition) return;
+        async function startMicPTT(e) {
+            if (e && e.preventDefault) e.preventDefault(); // previne double-fire touch+mouse
+            if (isListening) return;
+
+            // Cere microfonul cu filtre de zgomot active
+            try {
+                window._micStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        noiseSuppression: true,
+                        echoCancellation: true,
+                        autoGainControl: true,
+                        channelCount: 1
+                    }
+                });
+            } catch (err) {
+                console.warn('getUserMedia cu filtre:', err);
+            }
+
             isListening = true;
-            recognition.start();
-            document.getElementById('mic-btn').classList.add('listening');
-            document.getElementById('mic-btn').textContent = '⏹';
-            document.getElementById('mic-status').textContent = '🔴 Ascult... rostește articolul!';
+            try { recognition.start(); } catch (ex) { }
+            const btn = document.getElementById('mic-btn');
+            btn.classList.add('listening');
+            btn.textContent = '🔴';
+            document.getElementById('mic-status').textContent = '🎙 Vorbește acum...';
+            document.getElementById('mic-status').style.color = 'var(--accent)';
+        }
+
+        function stopMicPTT() {
+            if (!isListening) return;
+            // Opreste recunoasterea — onresult se va declansa cu ce s-a spus
+            document.getElementById('mic-status').textContent = '⏳ Procesez...';
             document.getElementById('mic-status').style.color = '';
+            if (recognition) { try { recognition.stop(); } catch (e) { } }
         }
 
         function stopListening() {
             isListening = false;
             if (recognition) { try { recognition.stop(); } catch (e) { } }
+            // Inchide stream-ul microfon (elibereaza indicatorul de microfon activ)
+            if (window._micStream) {
+                window._micStream.getTracks().forEach(t => t.stop());
+                window._micStream = null;
+            }
             const btn = document.getElementById('mic-btn');
             btn.classList.remove('listening');
             btn.textContent = '🎙️';
-            // Curata textul de status (Procesez... sau live text)
             const st = document.getElementById('mic-status');
             st.textContent = '';
             st.style.color = '';
