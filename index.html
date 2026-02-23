@@ -1154,7 +1154,6 @@
             };
 
             recognition.onresult = (e) => {
-                // Afiseaza textul live cat timp vorbeste
                 let interim = '';
                 let final = '';
                 for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -1166,13 +1165,20 @@
                 }
 
                 if (interim) {
-                    // Arata textul recunoscut pana acum (live)
                     document.getElementById('mic-status').textContent = '🎙 ' + interim;
+
+                    // Dupa 600ms fara vorbire noua → declanseaza rezultatul final
+                    clearTimeout(window._silenceTimer);
+                    window._silenceTimer = setTimeout(() => {
+                        if (isListening && recognition) {
+                            try { recognition.stop(); } catch (ex) { }
+                        }
+                    }, 600);
                 }
 
                 if (final) {
+                    clearTimeout(window._silenceTimer);
                     const confidence = e.results[e.results.length - 1][0].confidence;
-                    // Ignora zgomotul de fundal interpretat cu incredere scazuta
                     if (confidence > 0 && confidence < 0.45) {
                         document.getElementById('mic-status').textContent = '🔇 Zgomot ignorat, încearcă din nou';
                         setTimeout(() => stopListening(), 1500);
